@@ -1,3 +1,4 @@
+import typing
 import asyncpraw.models
 
 
@@ -18,11 +19,38 @@ async def find_button_widget(subreddit: asyncpraw.models.Subreddit, name: str) -
 
 
 async def find_button(button_widget: asyncpraw.models.ButtonWidget, name: str) -> asyncpraw.models.Button:
-    for button in button_widget:
+    for button in button_widget.buttons:
         if button.text.casefold() == name.casefold():
             return button
 
     raise KeyError(f'Button named {name} not found in button widget {button_widget.shortName}')
+
+
+def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typing.Dict[str, dict]:
+    buttons_json = {}
+
+    for button in button_widget.buttons:
+        # attributes every button has
+        button_dict = {
+            'kind': button.kind,
+            'color': button.color,
+            'fillColor': button.fillColor,
+            'text': button.text,
+            'textColour': button.textColour,
+            'url': button.url,
+        }
+        # attributes it may have
+        if hasattr(button, 'hoverState'):
+            button_dict['hoverState'] = button.hoverState
+        # attributes depending on type
+        if button.kind == 'image':
+            button_dict['height'] = button.height
+            button_dict['width'] = button.width
+            button_dict['linkUrl'] = button.linkUrl
+
+        buttons_json[button.text] = button_dict
+
+    return buttons_json
 
 
 async def update_button(
@@ -33,10 +61,10 @@ async def update_button(
     button_widget = await find_button_widget(subreddit, button_widget_name)
     button = await find_button(button_widget, button_name)
 
-    # todo: check if this works or if I have to do it with button_widget.mod.update()
-    # it doesn't work, need to use a different method
     # raises asyncprawcore.exceptions.Forbidden http 403 if not mod
     # also if sub is private
-    button.text = new_button_text
-    button.url = new_button_url
+    buttons_json = button_widget_to_json(button_widget)
+    buttons_json[button.text]['text'] = new_button_text
+    buttons_json[button.text]['url'] = new_button_url
 
+    await button_widget.mod.update(buttons=[buttons_json.values()])
