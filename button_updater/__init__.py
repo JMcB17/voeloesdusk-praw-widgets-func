@@ -59,18 +59,25 @@ def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typin
 
     for button in button_widget.buttons:
         # attributes every button has
+        # todo: convert this to code like the lot below, and make that a function?
         button_dict = {
             'kind': button.kind,
             'color': button.color,
             'text': button.text,
-            'textColour': button.textColour,
             'url': button.url,
         }
         # attributes it may have
-        optional_attrs = ['hoverState', 'fillColor']
+        optional_attrs = ['hoverState']
         for attr in optional_attrs:
             if hasattr(button, attr):
                 button_dict[attr] = getattr(button, attr)
+        # attributes it may have with defaults
+        defaulting_attrs = {'fillColor': '#000000', 'textColor': '#FFFFFF'}
+        for attr in defaulting_attrs:
+            if hasattr(button, attr):
+                button_dict[attr] = getattr(button, attr)
+            else:
+                button_dict[attr] = defaulting_attrs[attr]
         # attributes depending on type
         if button.kind == 'image':
             image_attrs = ['height', 'width', 'linkUrl']
@@ -111,4 +118,5 @@ async def update_button(
     buttons_json[button.text]['text'] = new_button_text
     buttons_json[button.text]['url'] = new_button_url
 
-    await button_widget.mod.update(buttons=[buttons_json.values()])
+    print(list(buttons_json.values()))
+    await button_widget.mod.update(buttons=[list(buttons_json.values())])
