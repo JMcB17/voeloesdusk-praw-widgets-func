@@ -62,19 +62,21 @@ def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typin
         button_dict = {
             'kind': button.kind,
             'color': button.color,
-            'fillColor': button.fillColor,
             'text': button.text,
             'textColour': button.textColour,
             'url': button.url,
         }
         # attributes it may have
-        if hasattr(button, 'hoverState'):
-            button_dict['hoverState'] = button.hoverState
+        optional_attrs = ['hoverState', 'fillColor']
+        for attr in optional_attrs:
+            if hasattr(button, attr):
+                button_dict[attr] = getattr(button, attr)
         # attributes depending on type
         if button.kind == 'image':
-            button_dict['height'] = button.height
-            button_dict['width'] = button.width
-            button_dict['linkUrl'] = button.linkUrl
+            image_attrs = ['height', 'width', 'linkUrl']
+            for attr in image_attrs:
+                if hasattr(button, attr):
+                    button_dict[attr] = getattr(button, attr)
 
         buttons_json[button.text] = button_dict
 
