@@ -5,8 +5,9 @@ import asyncpraw.models
 __version__ = '1.0.0'
 
 
-# todo: add argument to make it case sensitive
-async def find_button_widget(subreddit: asyncpraw.models.Subreddit, name: str) -> asyncpraw.models.ButtonWidget:
+async def find_button_widget(
+        subreddit: asyncpraw.models.Subreddit, name: str, case_sensitive: bool = False
+) -> asyncpraw.models.ButtonWidget:
     """Return the first button widget in the given subreddit that has the given name.
 
     Raises KeyError if no button widget in the subreddit has that name.
@@ -15,19 +16,33 @@ async def find_button_widget(subreddit: asyncpraw.models.Subreddit, name: str) -
     button_widgets = [w for w in widgets_dict.values() if isinstance(w, asyncpraw.models.ButtonWidget)]
 
     for widget in button_widgets:
-        if widget.shortName.casefold() == name.casefold():
+        widget_name = widget.shortName
+        search_name = name
+        if not case_sensitive:
+            widget_name = widget_name.casefold()
+            search_name = search_name.casefold()
+
+        if widget_name == search_name:
             return widget
 
     raise KeyError(f'Button widget named {name} not found in subreddit {subreddit.name}')
 
 
-async def find_button(button_widget: asyncpraw.models.ButtonWidget, name: str) -> asyncpraw.models.Button:
+async def find_button(
+        button_widget: asyncpraw.models.ButtonWidget, name: str, case_sensitive: bool = False
+) -> asyncpraw.models.Button:
     """Return the first button in the given button widget that has the given name (text).
 
     Raises KeyError if no button in the button widget has that name.
     """
     for button in button_widget.buttons:
-        if button.text.casefold() == name.casefold():
+        button_name = button.text
+        search_name = name
+        if not case_sensitive:
+            button_name = button_name.casefold()
+            search_name = search_name.casefold()
+
+        if button_name == search_name:
             return button
 
     raise KeyError(f'Button named {name} not found in button widget {button_widget.shortName}')
