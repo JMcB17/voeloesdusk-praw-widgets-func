@@ -6,8 +6,11 @@ __version__ = '1.0.0'
 
 
 # todo: add argument to make it case sensitive
-# todo: write docstrings
 async def find_button_widget(subreddit: asyncpraw.models.Subreddit, name: str) -> asyncpraw.models.ButtonWidget:
+    """Return the first button widget in the given subreddit that has the given name.
+
+    Raises KeyError if no button widget in the subreddit has that name.
+    """
     widgets_dict = await subreddit.widgets.items()
     button_widgets = [w for w in widgets_dict.values() if isinstance(w, asyncpraw.models.ButtonWidget)]
 
@@ -19,6 +22,10 @@ async def find_button_widget(subreddit: asyncpraw.models.Subreddit, name: str) -
 
 
 async def find_button(button_widget: asyncpraw.models.ButtonWidget, name: str) -> asyncpraw.models.Button:
+    """Return the first button in the given button widget that has the given name (text).
+
+    Raises KeyError if no button in the button widget has that name.
+    """
     for button in button_widget.buttons:
         if button.text.casefold() == name.casefold():
             return button
@@ -27,6 +34,12 @@ async def find_button(button_widget: asyncpraw.models.ButtonWidget, name: str) -
 
 
 def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typing.Dict[str, dict]:
+    """Given a button widget, convert it to a dict that could be given to the reddit API to duplicate the widget.
+
+    Note: returns a dict of button text, button attribute pairs. To get it in the exact format that the reddit API
+    takes, use button_widget_to_json(button_widget).values()
+    """
+    # todo: what if there are buttons with the same text
     buttons_json = {}
 
     for button in button_widget.buttons:
@@ -58,6 +71,20 @@ async def update_button(
         button_widget_name: str, button_name: str,
         new_button_text: str, new_button_url: str
 ):
+    """Search a subreddit for a button and update it.
+
+    Args:
+        subreddit -- the subreddit object in which to search
+        button_widget_name -- name of the button widget to search for
+        button_name -- name (text) of the button within the button widget to search for
+        new_button_text -- if found, the button's text will be set to this
+        new_button_url -- like new_button_text
+
+    Raises:
+        prawcore.errors.Forbidden with http code 402 if you do not have access to the subreddit (private subreddits),
+            or if you are not a moderator of the subreddit and cannot update the button
+        KeyError if there is no match for one of the given search terms
+    """
     button_widget = await find_button_widget(subreddit, button_widget_name)
     button = await find_button(button_widget, button_name)
 
