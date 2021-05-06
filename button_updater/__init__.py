@@ -124,6 +124,7 @@ async def update_button(
         if button_json['text'] == button.text:
             button_json['text'] = new_button_text
             button_json['url'] = new_button_url
+            break
 
     # send the api request to update the button
     await button_widget.mod.update(buttons=buttons_json)
