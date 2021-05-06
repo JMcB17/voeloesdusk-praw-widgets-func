@@ -67,18 +67,12 @@ def copyattrs(button: asyncpraw.models.Button, button_dict: dict, attrs: typing.
     return button_dict
 
 
-def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typing.Dict[str, dict]:
-    """Given a button widget, convert it to a dict that could be given to the reddit API to duplicate the widget.
-
-    Note: returns a dict of button text, button attribute pairs. To get it in the exact format that the reddit API
-    takes, use button_widget_to_json(button_widget).values()
-    """
-    # todo: what if there are buttons with the same text
-    buttons_json = {}
+def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typing.List[dict]:
+    """Given a button widget, convert it to a dict that could be given to the reddit API to duplicate the widget."""
+    buttons_json = []
 
     for button in button_widget.buttons:
         # attributes every button has
-        # todo: convert this to code like the lot below, and make that a function?
         button_dict = {
             'kind': button.kind,
             'color': button.color,
@@ -96,7 +90,7 @@ def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typin
             image_attrs = ['height', 'width', 'linkUrl']
             button_dict = copyattrs(button, button_dict, image_attrs)
 
-        buttons_json[button.text] = button_dict
+        buttons_json.append(button_dict)
 
     return buttons_json
 
@@ -120,14 +114,16 @@ async def update_button(
             or if you are not a moderator of the subreddit and cannot update the button
         KeyError if there is no match for one of the given search terms
     """
+    # search to check if it exists
     button_widget = await find_button_widget(subreddit, button_widget_name)
     button = await find_button(button_widget, button_name)
 
-    # raises asyncprawcore.exceptions.Forbidden http 403 if not mod
-    # also if sub is private
+    # get json to send to reddit api, then modify it
     buttons_json = button_widget_to_json(button_widget)
-    buttons_json[button.text]['text'] = new_button_text
-    buttons_json[button.text]['url'] = new_button_url
+    for button_json in buttons_json:
+        if button_json['text'] == button.text:
+            button_json['text'] = new_button_text
+            button_json['url'] = new_button_url
 
-    print(list(buttons_json.values()))
-    await button_widget.mod.update(buttons=[list(buttons_json.values())])
+    # send the api request to update the button
+    await button_widget.mod.update(buttons=buttons_json)
