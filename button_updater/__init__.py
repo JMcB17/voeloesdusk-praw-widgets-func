@@ -48,6 +48,25 @@ async def find_button(
     raise KeyError(f'Button named {name} not found in button widget {button_widget.shortName}')
 
 
+def copyattrs(button: asyncpraw.models.Button, button_dict: dict, attrs: typing.Union[list, dict]) -> dict:
+    """Copy attributes from the button to the dict if they exist.
+
+    Args:
+        button -- button to copy attrs from
+        button_dict -- dict to copy attrs to
+        attrs -- list of attr names to copy, or a dict of attr names to copy with default values
+    Returns:
+        button_dict with any applicable attrs added
+    """
+    for attr in attrs:
+        if hasattr(button, attr):
+            button_dict[attr] = getattr(button, attr)
+        elif isinstance(attrs, dict):
+            button_dict[attr] = attrs[attr]
+
+    return button_dict
+
+
 def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typing.Dict[str, dict]:
     """Given a button widget, convert it to a dict that could be given to the reddit API to duplicate the widget.
 
@@ -68,22 +87,14 @@ def button_widget_to_json(button_widget: asyncpraw.models.ButtonWidget) -> typin
         }
         # attributes it may have
         optional_attrs = ['hoverState']
-        for attr in optional_attrs:
-            if hasattr(button, attr):
-                button_dict[attr] = getattr(button, attr)
+        button_dict = copyattrs(button, button_dict, optional_attrs)
         # attributes it may have with defaults
         defaulting_attrs = {'fillColor': '#000000', 'textColor': '#FFFFFF'}
-        for attr in defaulting_attrs:
-            if hasattr(button, attr):
-                button_dict[attr] = getattr(button, attr)
-            else:
-                button_dict[attr] = defaulting_attrs[attr]
+        button_dict = copyattrs(button, button_dict, defaulting_attrs)
         # attributes depending on type
         if button.kind == 'image':
             image_attrs = ['height', 'width', 'linkUrl']
-            for attr in image_attrs:
-                if hasattr(button, attr):
-                    button_dict[attr] = getattr(button, attr)
+            button_dict = copyattrs(button, button_dict, image_attrs)
 
         buttons_json[button.text] = button_dict
 
