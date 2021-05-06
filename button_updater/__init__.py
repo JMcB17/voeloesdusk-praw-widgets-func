@@ -1,3 +1,5 @@
+"""Provides an asyncpraw function to search for a single Reddit button within a button widget and update it."""
+
 import typing
 import asyncpraw.models
 

@@ -11,7 +11,8 @@ setuptools.setup(
     author='JMcB',
     author_email='joel.mcbride1@live.com',
     license='MIT',
-    description='Fiver commission for voeloesdusk',
+    description='Provides an asyncpraw function to search '
+                'for a single Reddit button within a button widget and update it.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/JMcB17/voeloesdusk-praw-widgets-func',
